@@ -1,0 +1,1776 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EduPulse — Founder Manager Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] }
+        }
+      }
+    };
+  </script>
+  <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <style>
+    .hidden { display: none; }
+    body { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+    .oxford-bg { background: linear-gradient(135deg, #07152B 0%, #0E2749 55%, #091B36 100%); }
+    .oxford-card { border: 1.5px solid rgba(212, 175, 55, 0.45); }
+    .oxford-btn { background: #0B1F3A; color: #F9E6A7; border: 1px solid #D4AF37; }
+    .oxford-btn:hover { background: #132F57; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.45); border-radius: 9999px; }
+  </style>
+</head>
+<body class="h-full bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 antialiased">
+
+  <!-- Toast Container -->
+  <div id="toastContainer" role="status" aria-live="polite" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm w-[calc(100%-2rem)] pointer-events-none"></div>
+
+  <!-- ===================== FOUNDER LOGIN SCREEN ===================== -->
+  <section id="loginScreen" class="min-h-screen flex items-center justify-center p-4 oxford-bg">
+    <div class="w-full max-w-md bg-white dark:bg-slate-900 border-2 border-[#D4AF37] rounded-3xl shadow-2xl overflow-hidden">
+      <div class="p-7 oxford-bg text-white border-b-2 border-[#D4AF37]">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-11 h-11 rounded-2xl bg-white/15 border border-white/25 flex items-center justify-center font-extrabold text-lg">EP</div>
+            <div>
+              <h1 class="text-lg font-extrabold tracking-tight">EduPulse Founder</h1>
+              <p class="text-xs text-[#F5D77F]">Private Multi-School Control • v3.2.2</p>
+            </div>
+          </div>
+          <button id="btnLoginTheme" type="button" aria-label="Toggle theme" class="p-2 rounded-xl bg-white/15 hover:bg-white/25 transition">
+            <i data-lucide="moon" class="w-4 h-4 dark:hidden"></i>
+            <i data-lucide="sun" class="w-4 h-4 hidden dark:block"></i>
+          </button>
+        </div>
+      </div>
+
+      <form id="formFounderLogin" class="p-7 space-y-4">
+        <div id="loginErrorBox" class="hidden rounded-xl p-3 text-xs font-medium bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800"></div>
+
+        <div>
+          <label for="founderEmail" class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">Founder Email</label>
+          <input id="founderEmail" type="email" required autocomplete="username" placeholder="Enter founder email" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-[#D4AF37]" />
+        </div>
+
+        <div>
+          <label for="founderPassword" class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">Password</label>
+          <input id="founderPassword" type="password" required autocomplete="current-password" placeholder="Enter password" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-[#D4AF37]" />
+        </div>
+
+        <button id="btnLoginSubmit" type="submit" class="w-full py-3 rounded-xl oxford-btn font-bold text-sm shadow-sm flex items-center justify-center gap-2 transition">
+          <i data-lucide="shield-check" class="w-4 h-4"></i>
+          <span>Sign In Securely</span>
+        </button>
+
+        <p class="text-[11px] text-center text-slate-400 pt-1">
+          Authenticated via Firebase Auth • Server-Enforced Rules
+        </p>
+      </form>
+    </div>
+  </section>
+
+  <!-- ===================== MAIN FOUNDER SHELL ===================== -->
+  <div id="appShell" class="hidden min-h-screen flex flex-col lg:flex-row">
+    <div id="sidebarBackdrop" class="fixed inset-0 bg-slate-900/50 z-30 hidden lg:hidden"></div>
+
+    <!-- Sidebar -->
+    <aside id="sidebar" class="fixed lg:sticky top-0 left-0 z-40 h-screen w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col transform -translate-x-full lg:translate-x-0 transition-transform duration-200">
+      <div class="h-16 px-5 flex items-center justify-between border-b border-slate-200 dark:border-slate-800">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-[#0B1F3A] border border-[#D4AF37] text-[#F5D77F] flex items-center justify-center font-extrabold text-sm">EP</div>
+          <div>
+            <div class="font-extrabold text-sm leading-tight">EduPulse</div>
+            <div class="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold">Founder Console</div>
+          </div>
+        </div>
+        <button id="btnCloseSidebar" type="button" aria-label="Close menu" class="lg:hidden p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <nav id="sidebarNav" class="flex-1 overflow-y-auto p-3 space-y-1">
+        <button type="button" data-tab="overview" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition">
+          <i data-lucide="layout-dashboard" class="w-4 h-4"></i><span>Overview</span>
+        </button>
+        <button type="button" data-tab="schools" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition">
+          <i data-lucide="building-2" class="w-4 h-4"></i><span>Schools</span>
+        </button>
+        <button type="button" data-tab="inspector" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition">
+          <i data-lucide="school" class="w-4 h-4"></i><span>Manage School Data</span>
+        </button>
+        <button type="button" data-tab="roles" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition">
+          <i data-lucide="key-round" class="w-4 h-4"></i><span>User Roles &amp; Access</span>
+        </button>
+        <button type="button" data-tab="backups" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition">
+          <i data-lucide="hard-drive-download" class="w-4 h-4"></i><span>Backups &amp; Version</span>
+        </button>
+      </nav>
+
+      <!-- Live Sync Card -->
+      <div class="p-4 border-t border-slate-200 dark:border-slate-800 space-y-2">
+        <div class="rounded-xl bg-slate-50 dark:bg-slate-800/70 p-3 text-xs space-y-1">
+          <div class="flex items-center justify-between">
+            <span class="text-slate-500 dark:text-slate-400">Realtime DB</span>
+            <span id="sidebarSyncStatus" class="font-semibold text-amber-600">Connecting...</span>
+          </div>
+          <div id="sidebarLastSynced" class="text-[11px] text-slate-500 dark:text-slate-400 font-mono">Waiting for sync...</div>
+          <div id="sidebarFounderEmail" class="text-[11px] text-slate-400 truncate pt-1 border-t border-slate-200 dark:border-slate-700"></div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Column -->
+    <div class="flex-1 flex flex-col min-w-0">
+      <header class="sticky top-0 z-20 h-16 bg-white/90 dark:bg-slate-900/90 backdrop-blur border-b border-slate-200 dark:border-slate-800 px-4 sm:px-6 flex items-center justify-between gap-3">
+        <div class="flex items-center gap-3 min-w-0">
+          <button id="btnOpenSidebar" type="button" aria-label="Open menu" class="lg:hidden p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800">
+            <i data-lucide="menu" class="w-5 h-5"></i>
+          </button>
+          <h2 id="headerTitle" class="text-base sm:text-lg font-extrabold truncate">Overview</h2>
+        </div>
+
+        <div class="flex items-center gap-2 shrink-0">
+          <div id="liveStatusPill" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+            <span id="liveStatusDot" class="w-2 h-2 rounded-full bg-amber-500"></span>
+            <span id="liveStatusText">Connecting</span>
+          </div>
+
+          <button id="btnHeaderTheme" type="button" aria-label="Toggle theme" class="p-2 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+            <i data-lucide="moon" class="w-4 h-4 dark:hidden"></i>
+            <i data-lucide="sun" class="w-4 h-4 hidden dark:block"></i>
+          </button>
+
+          <button id="btnLogout" type="button" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 text-xs font-semibold transition">
+            <i data-lucide="log-out" class="w-4 h-4"></i>
+            <span class="hidden sm:inline">Sign Out</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Sync Error Banner -->
+      <div id="syncErrorBanner" class="hidden bg-rose-600 text-white px-4 py-2.5 text-xs font-semibold flex items-center justify-between gap-2">
+        <span id="syncErrorText">Sync error occurred.</span>
+        <button id="btnDismissSyncError" type="button" class="underline text-white/90 hover:text-white">Dismiss</button>
+      </div>
+
+      <main id="mainContent" class="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto"></main>
+    </div>
+  </div>
+
+  <!-- ===================== MODAL: CONFIRM ACTION ===================== -->
+  <div id="modalConfirm" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-slate-900/60">
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-sm w-full p-6 shadow-2xl space-y-4">
+      <h3 id="confirmTitle" class="text-base font-bold">Confirm Action</h3>
+      <p id="confirmMessage" class="text-sm text-slate-600 dark:text-slate-300"></p>
+      <div class="flex justify-end gap-2 pt-2">
+        <button id="btnConfirmCancel" type="button" class="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200">Cancel</button>
+        <button id="btnConfirmOk" type="button" class="px-4 py-2 rounded-xl text-xs font-semibold bg-rose-600 hover:bg-rose-700 text-white">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== MODAL: ADD / EDIT STUDENT ===================== -->
+  <div id="modalStudent" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-slate-900/60">
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 id="modalStudentTitle" class="text-base font-bold">Add Student</h3>
+        <button type="button" data-close="modalStudent" class="p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <form id="formStudent" class="space-y-3.5">
+        <input type="hidden" id="stuEditId" />
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label for="stuAdmNo" class="block text-xs font-semibold text-slate-500 mb-1">Admission No *</label>
+            <input id="stuAdmNo" type="text" required placeholder="Unique admission no" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm" />
+          </div>
+          <div>
+            <label for="stuClass" class="block text-xs font-semibold text-slate-500 mb-1">Class *</label>
+            <select id="stuClass" required class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm"></select>
+          </div>
+          <div class="sm:col-span-2">
+            <label for="stuName" class="block text-xs font-semibold text-slate-500 mb-1">Student Full Name *</label>
+            <input id="stuName" type="text" required placeholder="Enter student name" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm" />
+          </div>
+          <div>
+            <label for="stuGuardian" class="block text-xs font-semibold text-slate-500 mb-1">Guardian Name *</label>
+            <input id="stuGuardian" type="text" required placeholder="Enter guardian name" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm" />
+          </div>
+          <div>
+            <label for="stuPhone" class="block text-xs font-semibold text-slate-500 mb-1">Guardian Phone</label>
+            <input id="stuPhone" type="tel" placeholder="Enter phone number" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm" />
+          </div>
+          <div>
+            <label for="stuMonthlyFee" class="block text-xs font-semibold text-slate-500 mb-1">Monthly Fee (₹)</label>
+            <input id="stuMonthlyFee" type="number" min="0" value="0" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm" />
+          </div>
+          <div>
+            <label for="stuBalance" class="block text-xs font-semibold text-slate-500 mb-1">Opening Arrears (₹)</label>
+            <input id="stuBalance" type="number" min="0" value="0" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm" />
+          </div>
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" data-close="modalStudent" class="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200">Cancel</button>
+          <button type="submit" class="px-4 py-2 rounded-xl text-xs font-semibold oxford-btn">Save Student</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ===================== MODAL: RECORD FEE PAYMENT ===================== -->
+  <div id="modalPayment" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-slate-900/60">
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <h3 class="text-base font-bold">Record Fee Payment</h3>
+          <p id="payStudentLabel" class="text-xs text-slate-500"></p>
+        </div>
+        <button type="button" data-close="modalPayment" class="p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <form id="formPayment" class="space-y-3.5">
+        <input type="hidden" id="payStudentId" />
+        <div>
+          <label for="payAmount" class="block text-xs font-semibold text-slate-500 mb-1">Amount Received (₹) *</label>
+          <input id="payAmount" type="number" min="1" step="1" required placeholder="Enter amount in rupees" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm font-semibold" />
+        </div>
+        <div>
+          <label for="payNotes" class="block text-xs font-semibold text-slate-500 mb-1">Notes / Mode</label>
+          <input id="payNotes" type="text" placeholder="Cash / UPI / Bank transfer" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm" />
+        </div>
+        <p class="text-[11px] text-slate-500 bg-slate-50 dark:bg-slate-800 p-2.5 rounded-xl">
+          Writes an immutable ledger entry in integer paise with an atomic sequential receipt number. Existing receipts are never overwritten.
+        </p>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" data-close="modalPayment" class="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200">Cancel</button>
+          <button type="submit" class="px-4 py-2 rounded-xl text-xs font-semibold oxford-btn">Record Payment</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="fee-posting.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+  <script>
+    const initializeApp = (cfg) => firebase.initializeApp(cfg, 'EduPulseFounderWeb');
+    const getApps = () => firebase.apps || [];
+    const getAuth = (a) => firebase.auth(a);
+    const getDatabase = (a) => firebase.database(a);
+    const signInWithEmailAndPassword = (a, email, pass) => a.signInWithEmailAndPassword(email, pass);
+    const onAuthStateChanged = (a, cb) => a.onAuthStateChanged(cb);
+    const signOut = (a) => a.signOut();
+    const ref = (database, path) => path ? database.ref(path) : database.ref();
+    const get = (r) => r.once('value');
+    const set = (r, v) => r.set(v);
+    const update = (r, v) => r.update(v);
+    const push = (r, v) => v !== undefined ? r.push(v) : r.push();
+    const remove = (r) => r.remove();
+    const onValue = (r, cb, errCb) => {
+      const listener = r.on('value', cb, errCb);
+      return () => r.off('value', listener);
+    };
+    const runTransaction = (r, fn) => r.transaction(fn);
+    const serverTimestamp = () => firebase.database.ServerValue.TIMESTAMP;
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyA5mT2jkg5hX4IM9JPCm-7OeHYMIpcw8hQ",
+      authDomain: "edupulse-mw.firebaseapp.com",
+      databaseURL: "https://edupulse-mw-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "edupulse-mw",
+      storageBucket: "edupulse-mw.firebasestorage.app",
+      messagingSenderId: "603841155713",
+      appId: "1:603841155713:web:46deabf60b6524fcbbb380"
+    };
+
+    const CLASSES = ['Nursery', 'LKG', 'UKG', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th', '10th'];
+
+    if (!window.firebase?.auth || !window.firebase?.database) {
+      const message = document.getElementById('loginErrorBox');
+      message.textContent = 'EduPulse could not connect. Check your internet connection and tap Retry.';
+      message.classList.remove('hidden');
+      const retry = document.getElementById('btnLoginSubmit');
+      retry.textContent = 'Retry';
+      retry.type = 'button';
+      retry.onclick = () => location.reload();
+      throw new Error('Firebase SDK unavailable');
+    }
+    const app = getApps().find((a) => a.name === 'EduPulseFounderWeb') || initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const sessionReady = auth.setPersistence(firebase.auth.Auth.Persistence.NONE);
+    const db = getDatabase(app);
+
+    function slugify(val) {
+      return String(val || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '');
+    }
+    function buildAuthEmail(role, schoolId, identifier) {
+      const sc = slugify(schoolId);
+      if (role === 'admin') return `admin.${sc}@edupulse.app`;
+      if (role === 'accountant') return `accountant.${sc}.${slugify(identifier)}@edupulse.app`;
+      if (role === 'teacher') return `teacher.${sc}.${slugify(identifier)}@edupulse.app`;
+      return `parent.${sc}.${slugify(identifier)}@edupulse.app`;
+    }
+
+    const state = {
+      user: null,
+      activeTab: 'overview',
+      inspectorSubtab: 'students',
+      selectedSchoolCode: '',
+      studentSearch: '',
+      studentClassFilter: 'ALL',
+      attHistoryDate: '',
+      attHistoryClass: 'ALL',
+      roleFilterSchool: 'ALL',
+      schools: {},
+      userRoles: {},
+      issuedPasscodes: {},
+      revealedUids: new Set(),
+      isBulkGenerating: false,
+      appConfig: { minAppVersion: '3.2.0' },
+      connected: false,
+      lastSyncedAt: null,
+      unsubs: [],
+      confirmCb: null
+    };
+
+    // ===================== HELPERS =====================
+    function esc(s) {
+      return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
+    function todayIST() {
+      return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+    }
+
+    function timeIST(d = new Date()) {
+      return d.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }) + ' IST';
+    }
+
+    function formatINR(num) {
+      return '₹' + (Number(num) || 0).toLocaleString('en-IN');
+    }
+
+    function toArray(obj) {
+      if (!obj || typeof obj !== 'object') return [];
+      return Object.entries(obj).filter(([, v]) => v && typeof v === 'object').map(([k, v]) => ({ _key: k, ...v, id: v.id || k }));
+    }
+
+    function showToast(msg, type = 'success') {
+      const box = document.getElementById('toastContainer');
+      const cls = type === 'error' ? 'bg-rose-600 text-white' : type === 'info' ? 'bg-slate-800 text-white' : 'oxford-btn';
+      const el = document.createElement('div');
+      el.className = `pointer-events-auto px-4 py-2.5 rounded-xl shadow-lg text-xs sm:text-sm font-semibold ${cls}`;
+      el.textContent = msg;
+      box.appendChild(el);
+      setTimeout(() => el.remove(), 3400);
+    }
+
+    function showSyncError(msg) {
+      document.getElementById('syncErrorText').textContent = msg;
+      document.getElementById('syncErrorBanner').classList.remove('hidden');
+    }
+
+    function setSyncState(mode) {
+      const pill = document.getElementById('liveStatusPill');
+      const dot = document.getElementById('liveStatusDot');
+      const text = document.getElementById('liveStatusText');
+      const side = document.getElementById('sidebarSyncStatus');
+      const last = document.getElementById('sidebarLastSynced');
+
+      if (mode === 'syncing') {
+        pill.className = 'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800';
+        dot.className = 'w-2 h-2 rounded-full bg-blue-500 animate-ping';
+        text.textContent = 'Syncing...';
+        side.textContent = 'Syncing...';
+        side.className = 'font-semibold text-blue-600';
+      } else if (mode === 'connected') {
+        state.lastSyncedAt = timeIST();
+        pill.className = 'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800';
+        dot.className = 'w-2 h-2 rounded-full bg-emerald-500 animate-pulse';
+        text.textContent = 'Live Connected';
+        side.textContent = 'Live Connected';
+        side.className = 'font-semibold text-emerald-600 dark:text-emerald-400';
+        last.textContent = `Last synced: ${state.lastSyncedAt}`;
+      } else {
+        pill.className = 'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800';
+        dot.className = 'w-2 h-2 rounded-full bg-amber-500';
+        text.textContent = 'Offline';
+        side.textContent = 'Offline';
+        side.className = 'font-semibold text-amber-600';
+      }
+    }
+
+    function refreshIcons() {
+      if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons();
+    }
+
+    function openModal(id) {
+      const el = document.getElementById(id);
+      if (el) { el.classList.remove('hidden'); el.classList.add('flex'); refreshIcons(); }
+    }
+
+    function closeModal(id) {
+      const el = document.getElementById(id);
+      if (el) { el.classList.add('hidden'); el.classList.remove('flex'); }
+    }
+
+    function confirmAction(title, message, cb) {
+      document.getElementById('confirmTitle').textContent = title;
+      document.getElementById('confirmMessage').textContent = message;
+      state.confirmCb = cb;
+      openModal('modalConfirm');
+    }
+
+    function initTheme() {
+      try {
+        const saved = localStorage.getItem('edupulse_founder_theme');
+        if (saved === 'dark') document.documentElement.classList.add('dark');
+      } catch {}
+    }
+
+    function toggleTheme() {
+      const isDark = document.documentElement.classList.toggle('dark');
+      try { localStorage.setItem('edupulse_founder_theme', isDark ? 'dark' : 'light'); } catch {}
+    }
+
+    let sheetSyncTimer = null;
+    function scheduleAutoSheetSync(schoolCode) {
+      const code = schoolCode || state.selectedSchoolCode;
+      const sc = state.schools[code];
+      const cfg = sc?.sheetsSyncConfig;
+      if (!cfg || !cfg.enabled || !cfg.webhookUrl || !cfg.secret) return;
+      clearTimeout(sheetSyncTimer);
+      sheetSyncTimer = setTimeout(() => pushSchoolToGoogleSheet(code, sc, cfg), 2500);
+    }
+
+    async function pushSchoolToGoogleSheet(code, sc, cfg) {
+      const students = toArray(sc.students);
+      const timetable = toArray(sc.timetable);
+      const checkins = toArray(sc.staffCheckins);
+      const stuMap = Object.fromEntries(students.map((s) => [s._key, s]));
+      const payments = [];
+      Object.entries(sc.payments || {}).forEach(([sk, pMap]) => {
+        Object.values(pMap || {}).forEach((p) => {
+          if (p && typeof p === 'object') payments.push([p.receiptNo || '', p.paidDate || '', stuMap[sk]?.admNo || '', stuMap[sk]?.name || sk, Math.round((Number(p.amountPaise) || 0) / 100), stuMap[sk]?.className || '', p.notes || '']);
+        });
+      });
+      const attendance = [];
+      Object.entries(sc.attendance || {}).sort(([a], [b]) => b.localeCompare(a)).forEach(([dt, dayMap]) => {
+        Object.entries(dayMap || {}).forEach(([sk, st]) => attendance.push(['Student Attendance', dt, stuMap[sk]?.name || sk, stuMap[sk]?.className || '', st]));
+      });
+      checkins.forEach((c) => attendance.push(['Teacher Check-In', c.date || '', c.teacher || '', c.location || '', c.time || '']));
+
+      const payload = {
+        secret: cfg.secret,
+        schoolName: sc.name || code,
+        schoolCode: code,
+        syncedAtIST: `${todayIST()} ${timeIST()}`,
+        students: students.map((s) => [s.admNo || '', s.name || '', s.className || '', s.guardian || '', s.phone || '', Number(s.monthlyFee) || 0, Number(s.feeBalance) || 0, Number(s.totalPaid) || 0, s.receiptNo || '', s.paidDate || '', s.feeStatus || 'Pending']),
+        payments,
+        timetable: timetable.map((t) => [t.teacher || '', t.className || '', t.subject || '']),
+        attendance
+      };
+      try {
+        await fetch(cfg.webhookUrl, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) });
+      } catch {}
+    }
+
+    async function writeAudit(schoolCode, action, target, details = {}) {
+      if (!state.user || !schoolCode) return;
+      try {
+        await push(ref(db, `schools_platform_v1/schools/${schoolCode}/auditLogs`), {
+          actorUid: state.user.uid,
+          actorEmail: state.user.email || '',
+          role: 'founder',
+          action,
+          target,
+          details,
+          recordedAt: serverTimestamp()
+        });
+      } catch {}
+      scheduleAutoSheetSync(schoolCode);
+    }
+
+    // ===================== REAL-TIME SUBSCRIPTIONS =====================
+    function clearListeners() {
+      state.unsubs.forEach((fn) => { try { fn(); } catch {} });
+      state.unsubs = [];
+    }
+
+    function startRealtimeListeners() {
+      clearListeners();
+
+      const u1 = onValue(ref(db, '.info/connected'), (snap) => {
+        state.connected = Boolean(snap.val());
+        setSyncState(state.connected ? 'connected' : 'offline');
+      });
+
+      const u2 = onValue(ref(db, 'schools_platform_v1/schools'), (snap) => {
+        state.schools = snap.val() || {};
+        const codes = Object.keys(state.schools);
+        if (!state.selectedSchoolCode || !state.schools[state.selectedSchoolCode]) {
+          state.selectedSchoolCode = codes[0] || '';
+        }
+        if (state.connected) setSyncState('connected');
+        renderActiveView();
+      }, (err) => {
+        showSyncError(`Schools sync error: ${err.message}`);
+      });
+
+      const u3 = onValue(ref(db, 'user_roles'), (snap) => {
+        state.userRoles = snap.val() || {};
+        if (state.connected) setSyncState('connected');
+        if (state.activeTab === 'roles' && !state.isBulkGenerating) renderActiveView();
+      }, (err) => {
+        showSyncError(`Roles sync error: ${err.message}`);
+      });
+
+      const u4 = onValue(ref(db, 'schools_platform_v1/appConfig'), (snap) => {
+        state.appConfig = snap.val() || { minAppVersion: '3.2.0' };
+        if (state.activeTab === 'backups') renderActiveView();
+      });
+
+      state.unsubs.push(u1, u2, u3, u4);
+    }
+
+    // ===================== COMPUTED STATS =====================
+    function computeSchoolPaymentsTotal(sc) {
+      let totalPaise = 0;
+      const payments = sc.payments || {};
+      Object.values(payments).forEach((stuMap) => {
+        Object.values(stuMap || {}).forEach((p) => {
+          if (p && p.type === 'PAYMENT' && Number(p.amountPaise) > 0) totalPaise += Number(p.amountPaise);
+        });
+      });
+      if (totalPaise > 0) return Math.round(totalPaise / 100);
+      return toArray(sc.students).reduce((acc, s) => acc + (Number(s.totalPaid) || 0), 0);
+    }
+
+    // ===================== RENDER VIEWS =====================
+    function updateNavHighlight() {
+      document.querySelectorAll('.nav-btn').forEach((btn) => {
+        const active = btn.dataset.tab === state.activeTab;
+        btn.className = `nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition ${
+          active
+            ? 'oxford-btn shadow-sm'
+            : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+        }`;
+      });
+      const titles = {
+        overview: 'Platform Overview',
+        schools: 'Registered Schools',
+        inspector: 'Manage School Data',
+        roles: 'User Roles & Access',
+        backups: 'Backups & App Version'
+      };
+      document.getElementById('headerTitle').textContent = titles[state.activeTab] || 'Founder Console';
+    }
+
+    function renderActiveView() {
+      updateNavHighlight();
+      const root = document.getElementById('mainContent');
+      if (state.activeTab === 'overview') renderOverview(root);
+      else if (state.activeTab === 'schools') renderSchools(root);
+      else if (state.activeTab === 'inspector') renderInspector(root);
+      else if (state.activeTab === 'roles') renderRoles(root);
+      else if (state.activeTab === 'backups') renderBackups(root);
+      refreshIcons();
+    }
+
+    function renderOverview(root) {
+      const schoolList = Object.entries(state.schools).map(([code, sc]) => ({ code, ...sc }));
+      const activeCount = schoolList.filter((s) => s.status !== 'Paused').length;
+      const totalStudents = schoolList.reduce((acc, s) => acc + toArray(s.students).length, 0);
+      const totalFees = schoolList.reduce((acc, s) => acc + computeSchoolPaymentsTotal(s), 0);
+      const totalAccounts = Object.keys(state.userRoles || {}).length;
+
+      root.innerHTML = `
+        <div class="space-y-6">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800">
+              <p class="text-xs font-semibold uppercase text-slate-500">Schools</p>
+              <p class="text-2xl font-extrabold mt-1">${schoolList.length}</p>
+              <p class="text-xs text-emerald-600 mt-1">${activeCount} active • ${schoolList.length - activeCount} paused</p>
+            </div>
+            <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800">
+              <p class="text-xs font-semibold uppercase text-slate-500">Total Students</p>
+              <p class="text-2xl font-extrabold mt-1">${totalStudents}</p>
+              <p class="text-xs text-slate-500 mt-1">Synced live from RTDB</p>
+            </div>
+            <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800">
+              <p class="text-xs font-semibold uppercase text-slate-500">Fees Collected</p>
+              <p class="text-2xl font-extrabold mt-1 text-emerald-600">${formatINR(totalFees)}</p>
+              <p class="text-xs text-slate-500 mt-1">Across all schools</p>
+            </div>
+            <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800">
+              <p class="text-xs font-semibold uppercase text-slate-500">Authenticated Accounts</p>
+              <p class="text-2xl font-extrabold mt-1">${totalAccounts}</p>
+              <p class="text-xs text-slate-500 mt-1">Role-scoped users</p>
+            </div>
+          </div>
+
+          <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+            <div class="px-5 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+              <h3 class="text-sm font-bold">Schools Snapshot (Live)</h3>
+              <button id="btnGoSchools" type="button" class="text-xs font-semibold text-emerald-600 hover:underline">+ Onboard School</button>
+            </div>
+            <div class="divide-y divide-slate-100 dark:divide-slate-800">
+              ${schoolList.length === 0 ? `<p class="p-8 text-center text-sm text-slate-400">No schools registered yet.</p>` : schoolList.map((s) => `
+                <div class="p-4 flex flex-wrap items-center justify-between gap-3 hover:bg-slate-50 dark:hover:bg-slate-800/40">
+                  <div>
+                    <div class="flex items-center gap-2">
+                      <span class="font-mono text-xs font-bold px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">${esc(s.code)}</span>
+                      <span class="font-bold text-sm">${esc(s.name || s.code)}</span>
+                      <span class="text-[11px] px-2 py-0.5 rounded-full font-semibold ${s.status === 'Paused' ? 'bg-rose-50 text-rose-700' : 'bg-emerald-50 text-emerald-700'}">${s.status === 'Paused' ? 'Paused' : 'Active'}</span>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-1">${esc(s.meta || '')} • ${toArray(s.students).length} students • ${formatINR(computeSchoolPaymentsTotal(s))} collected</p>
+                  </div>
+                  <button type="button" data-inspect-school="${esc(s.code)}" class="px-3 py-1.5 rounded-xl text-xs font-semibold oxford-btn">Manage Data</button>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('btnGoSchools')?.addEventListener('click', () => { state.activeTab = 'schools'; renderActiveView(); });
+      root.querySelectorAll('[data-inspect-school]').forEach((b) => {
+        b.addEventListener('click', () => {
+          state.selectedSchoolCode = b.dataset.inspectSchool;
+          state.activeTab = 'inspector';
+          renderActiveView();
+        });
+      });
+    }
+
+    function renderSchools(root) {
+      const schoolList = Object.entries(state.schools).map(([code, sc]) => ({ code, ...sc }));
+      root.innerHTML = `
+        <div class="space-y-6">
+          <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 space-y-4">
+            <div>
+              <h3 class="text-base font-bold">Onboard a New School</h3>
+              <p class="text-xs text-slate-500">Creates an isolated database branch under <code class="font-mono">/schools_platform_v1/schools/{schoolCode}</code>.</p>
+            </div>
+            <form id="formCreateSchool" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              <input id="newScCode" type="text" required placeholder="School Code" class="px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm uppercase font-mono" />
+              <input id="newScName" type="text" required placeholder="School Full Name" class="px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm" />
+              <input id="newScMeta" type="text" required placeholder="Location &amp; Academic Session" class="px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm" />
+              <button type="submit" class="px-4 py-2.5 rounded-xl oxford-btn text-sm font-semibold">+ Create School</button>
+            </form>
+          </div>
+
+          <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 text-xs uppercase text-slate-500">
+                    <th class="py-3 px-4">Code</th>
+                    <th class="py-3 px-4">Name &amp; Session</th>
+                    <th class="py-3 px-4">Students</th>
+                    <th class="py-3 px-4">Status</th>
+                    <th class="py-3 px-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-sm">
+                  ${schoolList.map((s) => {
+                    const active = s.status !== 'Paused';
+                    return `
+                      <tr>
+                        <td class="py-3 px-4 font-mono text-xs font-bold text-emerald-600">${esc(s.code)}</td>
+                        <td class="py-3 px-4"><div class="font-semibold">${esc(s.name)}</div><div class="text-xs text-slate-500">${esc(s.meta || '')}</div></td>
+                        <td class="py-3 px-4 font-semibold">${toArray(s.students).length}</td>
+                        <td class="py-3 px-4"><span class="px-2.5 py-0.5 rounded-full text-xs font-semibold ${active ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}">${active ? 'Active' : 'Paused'}</span></td>
+                        <td class="py-3 px-4 text-right space-x-1.5 whitespace-nowrap">
+                          <button type="button" data-open-sc="${esc(s.code)}" class="px-2.5 py-1.5 rounded-lg text-xs font-semibold oxford-btn">Manage</button>
+                          <button type="button" data-toggle-sc="${esc(s.code)}" class="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200">${active ? 'Pause' : 'Activate'}</button>
+                        </td>
+                      </tr>
+                    `;
+                  }).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('formCreateSchool')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const code = document.getElementById('newScCode').value.trim().toUpperCase().replace(/[^A-Z0-9_-]/g, '');
+        const name = document.getElementById('newScName').value.trim();
+        const meta = document.getElementById('newScMeta').value.trim();
+        if (!code || state.schools[code]) { showToast('Enter a unique school code.', 'error'); return; }
+        setSyncState('syncing');
+        try {
+          await set(ref(db, `schools_platform_v1/schools/${code}`), {
+            code, name, meta, status: 'Active', schemaVersion: 2, receiptCounter: 100, createdAt: serverTimestamp()
+          });
+          await writeAudit(code, 'CREATE_SCHOOL', code, { name });
+          showToast(`Created school ${code}`);
+          e.target.reset();
+        } catch (err) {
+          showSyncError(err.message);
+        }
+      });
+
+      root.querySelectorAll('[data-open-sc]').forEach((b) => b.addEventListener('click', () => {
+        state.selectedSchoolCode = b.dataset.openSc;
+        state.activeTab = 'inspector';
+        renderActiveView();
+      }));
+
+      root.querySelectorAll('[data-toggle-sc]').forEach((b) => b.addEventListener('click', async () => {
+        const code = b.dataset.toggleSc;
+        const nextStatus = state.schools[code]?.status === 'Paused' ? 'Active' : 'Paused';
+        setSyncState('syncing');
+        try {
+          await set(ref(db, `schools_platform_v1/schools/${code}/status`), nextStatus);
+          await writeAudit(code, 'TOGGLE_SCHOOL_STATUS', code, { status: nextStatus });
+          showToast(`${code} set to ${nextStatus}`);
+        } catch (err) {
+          showSyncError(err.message);
+        }
+      }));
+    }
+
+    function exportFounderSchoolExcel(sc, code) {
+      if (typeof XLSX === 'undefined') { showToast('Excel library not loaded.', 'error'); return; }
+      const wb = XLSX.utils.book_new();
+      const students = toArray(sc.students);
+      const timetable = toArray(sc.timetable);
+      const checkins = toArray(sc.staffCheckins);
+      const stuMap = Object.fromEntries(students.map((s) => [s._key, s]));
+      const payments = [];
+      Object.entries(sc.payments || {}).forEach(([sk, pMap]) => {
+        Object.values(pMap || {}).forEach((p) => {
+          if (p && typeof p === 'object') payments.push({ ...p, stuName: stuMap[sk]?.name || sk, stuClass: stuMap[sk]?.className || '', admNo: stuMap[sk]?.admNo || '' });
+        });
+      });
+
+      const lastStuRow = students.length + 1;
+      const lastPayRow = payments.length + 1;
+      const lastTtRow = timetable.length + 1;
+
+      const wsSum = XLSX.utils.aoa_to_sheet([
+        ['EduPulse Founder Console — Official School Excel Report'],
+        ['School Name', sc.name || code],
+        ['School Code', code],
+        ['Exported At (IST)', `${todayIST()} ${timeIST()}`],
+        [],
+        ['Key Metric', 'Formula / Value'],
+        ['Total Students', { f: `COUNTA('Students & Fees'!B2:B${Math.max(2, lastStuRow)})` }],
+        ['Total Monthly Fee Billing (INR)', { f: `SUM('Students & Fees'!F2:F${Math.max(2, lastStuRow)})` }],
+        ['Total Pending Balance / Arrears (INR)', { f: `SUM('Students & Fees'!G2:G${Math.max(2, lastStuRow)})` }],
+        ['Total Collected (Ledger INR)', { f: `SUM('Payment Ledger'!E2:E${Math.max(2, lastPayRow)})` }],
+        ['Total Receipts Issued', { f: `COUNTA('Payment Ledger'!A2:A${Math.max(2, lastPayRow)})` }],
+        ['Total Timetable Periods', { f: `COUNTA('Teachers & Timetable'!A2:A${Math.max(2, lastTtRow)})` }]
+      ]);
+      wsSum['!cols'] = [{ wch: 36 }, { wch: 36 }];
+      XLSX.utils.book_append_sheet(wb, wsSum, 'Executive Summary');
+
+      const stuRows = [['Admission No', 'Student Name', 'Class', 'Guardian', 'Phone', 'Monthly Fee (INR)', 'Pending Balance (INR)', 'Total Paid (INR)', 'Last Receipt', 'Last Paid Date', 'Status']];
+      students.forEach((s) => stuRows.push([s.admNo || '', s.name || '', s.className || '', s.guardian || '', s.phone || '', Number(s.monthlyFee) || 0, Number(s.feeBalance) || 0, Number(s.totalPaid) || 0, s.receiptNo || '', s.paidDate || '', s.feeStatus || 'Pending']));
+      if (students.length) stuRows.push(['TOTAL', { f: `COUNTA(B2:B${lastStuRow})` }, '', '', '', { f: `SUM(F2:F${lastStuRow})` }, { f: `SUM(G2:G${lastStuRow})` }, { f: `SUM(H2:H${lastStuRow})` }, '', '', '']);
+      const wsStu = XLSX.utils.aoa_to_sheet(stuRows);
+      wsStu['!cols'] = [{ wch: 14 }, { wch: 24 }, { wch: 10 }, { wch: 22 }, { wch: 15 }, { wch: 16 }, { wch: 18 }, { wch: 16 }, { wch: 16 }, { wch: 14 }, { wch: 12 }];
+      XLSX.utils.book_append_sheet(wb, wsStu, 'Students & Fees');
+
+      const payRows = [['Receipt No', 'Paid Date', 'Admission No', 'Student Name', 'Amount (INR)', 'Class', 'Mode / Notes']];
+      payments.forEach((p) => payRows.push([p.receiptNo || '', p.paidDate || '', p.admNo || '', p.stuName || '', Math.round((Number(p.amountPaise) || 0) / 100), p.stuClass || '', p.notes || '']));
+      if (payments.length) payRows.push(['TOTAL', '', '', { f: `COUNTA(A2:A${lastPayRow})` }, { f: `SUM(E2:E${lastPayRow})` }, '', '']);
+      const wsPay = XLSX.utils.aoa_to_sheet(payRows);
+      wsPay['!cols'] = [{ wch: 16 }, { wch: 14 }, { wch: 14 }, { wch: 24 }, { wch: 15 }, { wch: 10 }, { wch: 24 }];
+      XLSX.utils.book_append_sheet(wb, wsPay, 'Payment Ledger');
+
+      const ttRows = [['Teacher Name', 'Assigned Class', 'Subject / Period']];
+      timetable.forEach((t) => ttRows.push([t.teacher || '', t.className || '', t.subject || '']));
+      const wsTt = XLSX.utils.aoa_to_sheet(ttRows);
+      wsTt['!cols'] = [{ wch: 24 }, { wch: 16 }, { wch: 28 }];
+      XLSX.utils.book_append_sheet(wb, wsTt, 'Teachers & Timetable');
+
+      const attRows = [['Record Type', 'Date', 'Name', 'Class / Location', 'Status / Time']];
+      Object.entries(sc.attendance || {}).sort(([a], [b]) => b.localeCompare(a)).forEach(([dt, dayMap]) => {
+        Object.entries(dayMap || {}).forEach(([sk, st]) => attRows.push(['Student Attendance', dt, stuMap[sk]?.name || sk, stuMap[sk]?.className || '', st]));
+      });
+      checkins.forEach((c) => attRows.push(['Teacher Check-In', c.date || '', c.teacher || '', c.location || '', c.time || '']));
+      const wsAtt = XLSX.utils.aoa_to_sheet(attRows);
+      wsAtt['!cols'] = [{ wch: 20 }, { wch: 14 }, { wch: 24 }, { wch: 28 }, { wch: 14 }];
+      XLSX.utils.book_append_sheet(wb, wsAtt, 'Attendance & Check-Ins');
+
+      XLSX.writeFile(wb, `EduPulse_${code}_Master_Report_${todayIST()}.xlsx`);
+      showToast(`Exported ${code} Excel workbook!`);
+    }
+
+    function renderInspector(root) {
+      const codes = Object.keys(state.schools);
+      if (!codes.length) {
+        root.innerHTML = `<div class="bg-white dark:bg-slate-900 rounded-2xl p-10 text-center text-sm text-slate-500 border border-slate-200 dark:border-slate-800">Onboard a school first to manage its live records.</div>`;
+        return;
+      }
+      const sc = state.schools[state.selectedSchoolCode] || state.schools[codes[0]];
+      const code = sc.code || state.selectedSchoolCode;
+      const students = toArray(sc.students);
+      const timetable = toArray(sc.timetable);
+      const diaries = toArray(sc.diaries);
+
+      root.innerHTML = `
+        <div class="space-y-5">
+          <div class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3">
+            <div class="flex flex-wrap items-center gap-3">
+              <label for="inspectorSchoolSelect" class="text-xs font-semibold uppercase text-slate-500">School</label>
+              <select id="inspectorSchoolSelect" class="px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm font-bold">
+                ${codes.map((c) => `<option value="${esc(c)}" ${c === code ? 'selected' : ''}>${esc(c)} — ${esc(state.schools[c].name || c)}</option>`).join('')}
+              </select>
+            </div>
+            <div class="flex flex-wrap items-center gap-1.5">
+              <button id="btnFounderExportExcel" type="button" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-900 dark:bg-white text-white dark:text-slate-900 mr-1">Download Excel (.xlsx)</button>
+              ${['students', 'attendance', 'payments', 'timetable', 'diaries'].map((sub) => `
+                <button type="button" data-sub="${sub}" class="px-3 py-1.5 rounded-xl text-xs font-semibold capitalize transition ${state.inspectorSubtab === sub ? 'oxford-btn' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'}">${sub}</button>
+              `).join('')}
+            </div>
+          </div>
+
+          <div id="inspectorBody"></div>
+        </div>
+      `;
+
+      document.getElementById('btnFounderExportExcel')?.addEventListener('click', () => exportFounderSchoolExcel(sc, code));
+      document.getElementById('inspectorSchoolSelect')?.addEventListener('change', (e) => {
+        state.selectedSchoolCode = e.target.value;
+        renderInspector(root);
+      });
+      root.querySelectorAll('[data-sub]').forEach((b) => b.addEventListener('click', () => {
+        state.inspectorSubtab = b.dataset.sub;
+        renderInspector(root);
+      }));
+
+      const body = document.getElementById('inspectorBody');
+      if (state.inspectorSubtab === 'students') renderInspectorStudents(body, code, sc, students);
+      else if (state.inspectorSubtab === 'attendance') renderInspectorAttendance(body, code, sc, students);
+      else if (state.inspectorSubtab === 'payments') renderInspectorPayments(body, code, sc, students);
+      else if (state.inspectorSubtab === 'timetable') renderInspectorTimetable(body, code, timetable);
+      else renderInspectorDiaries(body, code, diaries);
+    }
+
+    function renderInspectorStudents(body, code, sc, students) {
+      const q = state.studentSearch.trim().toLowerCase();
+      const filtered = students.filter((s) => {
+        const clsOk = state.studentClassFilter === 'ALL' || s.className === state.studentClassFilter;
+        const qOk = !q || (s.name || '').toLowerCase().includes(q) || String(s.admNo || '').toLowerCase().includes(q) || (s.guardian || '').toLowerCase().includes(q);
+        return clsOk && qOk;
+      });
+
+      body.innerHTML = `
+        <div class="space-y-4">
+          <div class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3">
+            <div class="flex flex-wrap items-center gap-2 flex-1">
+              <input id="stuSearchInput" type="text" value="${esc(state.studentSearch)}" placeholder="Search student, admission no, or guardian..." class="flex-1 min-w-[200px] px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm" />
+              <select id="stuClsFilter" class="px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm">
+                <option value="ALL">All Classes (${students.length})</option>
+                ${CLASSES.map((c) => `<option value="${c}" ${state.studentClassFilter === c ? 'selected' : ''}>${c}</option>`).join('')}
+              </select>
+            </div>
+            <button id="btnAddStudentModal" type="button" class="px-4 py-2 rounded-xl oxford-btn text-xs font-semibold">+ Add Student</button>
+          </div>
+
+          <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 text-xs uppercase text-slate-500">
+                    <th class="py-3 px-4">Adm No</th>
+                    <th class="py-3 px-4">Student</th>
+                    <th class="py-3 px-4">Class</th>
+                    <th class="py-3 px-4">Guardian</th>
+                    <th class="py-3 px-4">Fee / Balance</th>
+                    <th class="py-3 px-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-sm">
+                  ${filtered.length === 0 ? `<tr><td colspan="6" class="py-8 text-center text-slate-400">No students found.</td></tr>` : filtered.map((s) => `
+                    <tr>
+                      <td class="py-3 px-4 font-mono text-xs font-bold ${!s.admNo ? 'text-rose-600' : 'text-emerald-600'}">${esc(s.admNo || 'MISSING')}</td>
+                      <td class="py-3 px-4 font-semibold">${esc(s.name)}</td>
+                      <td class="py-3 px-4 text-xs">${esc(s.className || '—')}</td>
+                      <td class="py-3 px-4 text-xs text-slate-600 dark:text-slate-300">${esc(s.guardian || '—')}${s.phone ? ` • ${esc(s.phone)}` : ''}</td>
+                      <td class="py-3 px-4 text-xs">
+                        <div>Monthly: <strong>${formatINR(s.monthlyFee)}</strong></div>
+                        <div class="${Number(s.feeBalance) > 0 ? 'text-rose-600 font-semibold' : 'text-slate-500'}">Bal: ${formatINR(s.feeBalance)}</div>
+                      </td>
+                      <td class="py-3 px-4 text-right whitespace-nowrap space-x-1">
+                        <button type="button" data-pay-stu="${esc(s._key)}" class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">Pay</button>
+                        <button type="button" data-edit-stu="${esc(s._key)}" class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300">Edit</button>
+                        <button type="button" data-del-stu="${esc(s._key)}" class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-rose-50 dark:bg-rose-950 text-rose-600">Remove</button>
+                      </td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('stuSearchInput')?.addEventListener('input', (e) => {
+        state.studentSearch = e.target.value;
+        renderInspectorStudents(body, code, sc, students);
+        const el = document.getElementById('stuSearchInput');
+        if (el) { el.focus(); el.setSelectionRange(el.value.length, el.value.length); }
+      });
+
+      document.getElementById('stuClsFilter')?.addEventListener('change', (e) => {
+        state.studentClassFilter = e.target.value;
+        renderInspectorStudents(body, code, sc, students);
+      });
+
+      document.getElementById('btnAddStudentModal')?.addEventListener('click', () => {
+        document.getElementById('modalStudentTitle').textContent = `Add Student (${code})`;
+        document.getElementById('stuEditId').value = '';
+        document.getElementById('formStudent').reset();
+        openModal('modalStudent');
+      });
+
+      body.querySelectorAll('[data-edit-stu]').forEach((b) => b.addEventListener('click', () => {
+        const s = sc.students?.[b.dataset.editStu];
+        if (!s) return;
+        document.getElementById('modalStudentTitle').textContent = `Edit Student (${code})`;
+        document.getElementById('stuEditId').value = b.dataset.editStu;
+        document.getElementById('stuAdmNo').value = s.admNo || '';
+        document.getElementById('stuClass').value = s.className || CLASSES[0];
+        document.getElementById('stuName').value = s.name || '';
+        document.getElementById('stuGuardian').value = s.guardian || '';
+        document.getElementById('stuPhone').value = s.phone || '';
+        document.getElementById('stuMonthlyFee').value = Number(s.monthlyFee) || 0;
+        document.getElementById('stuBalance').value = Number(s.feeBalance) || 0;
+        openModal('modalStudent');
+      }));
+
+      body.querySelectorAll('[data-pay-stu]').forEach((b) => b.addEventListener('click', () => {
+        const s = sc.students?.[b.dataset.payStu];
+        if (!s) return;
+        document.getElementById('payStudentId').value = b.dataset.payStu;
+        document.getElementById('payStudentLabel').textContent = `${s.name} • Adm ${s.admNo || '—'} • Class ${s.className}`;
+        document.getElementById('formPayment').reset();
+        document.getElementById('formPayment')._feeKey = null;
+        openModal('modalPayment');
+      }));
+
+      body.querySelectorAll('[data-del-stu]').forEach((b) => b.addEventListener('click', () => {
+        const key = b.dataset.delStu;
+        const s = sc.students?.[key];
+        confirmAction('Remove Student', `Remove ${s?.name || key} from ${code}?`, async () => {
+          setSyncState('syncing');
+          try {
+            await remove(ref(db, `schools_platform_v1/schools/${code}/students/${key}`));
+            await writeAudit(code, 'DELETE_STUDENT', key, { name: s?.name || '' });
+            showToast('Student removed.', 'info');
+          } catch (err) {
+            showSyncError(err.message);
+          }
+        });
+      }));
+    }
+
+    function renderInspectorAttendance(body, code, sc, students) {
+      const attMap = sc.attendance || {};
+      const dates = Object.keys(attMap).sort((a, b) => b.localeCompare(a));
+      const activeDate = (state.attHistoryDate && attMap[state.attHistoryDate]) ? state.attHistoryDate : (dates[0] || todayIST());
+      const dayRec = attMap[activeDate] || {};
+      const list = students.filter((s) => state.attHistoryClass === 'ALL' || s.className === state.attHistoryClass);
+      let p = 0, a = 0, l = 0;
+      list.forEach((s) => { if (dayRec[s._key] === 'P') p++; else if (dayRec[s._key] === 'A') a++; else if (dayRec[s._key] === 'L') l++; });
+
+      body.innerHTML = `
+        <div class="space-y-4">
+          <div class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3">
+            <div class="flex flex-wrap items-center gap-2">
+              <select id="fpAttDateSel" class="px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-mono font-bold">
+                ${dates.length === 0 ? `<option value="${todayIST()}">${todayIST()} (No records)</option>` : dates.map((d) => `<option value="${esc(d)}" ${d === activeDate ? 'selected' : ''}>${esc(d)}</option>`).join('')}
+              </select>
+              <select id="fpAttClsSel" class="px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-semibold">
+                <option value="ALL">All Classes</option>
+                ${CLASSES.map((c) => `<option value="${c}" ${state.attHistoryClass === c ? 'selected' : ''}>${c}</option>`).join('')}
+              </select>
+            </div>
+            <div class="flex items-center gap-2 text-xs font-bold">
+              <span class="px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">P: ${p}</span>
+              <span class="px-2.5 py-1 rounded-lg bg-rose-50 dark:bg-rose-950 text-rose-700 dark:text-rose-300">A: ${a}</span>
+              <span class="px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-300">L: ${l}</span>
+            </div>
+          </div>
+          <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+            <table class="w-full text-left border-collapse text-sm">
+              <thead><tr class="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 text-xs uppercase text-slate-500"><th class="py-2.5 px-4">Adm No</th><th class="py-2.5 px-4">Student</th><th class="py-2.5 px-4">Class</th><th class="py-2.5 px-4 text-right">Status (${esc(activeDate)})</th></tr></thead>
+              <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                ${list.length === 0 ? `<tr><td colspan="4" class="py-8 text-center text-slate-400">No students found.</td></tr>` : list.map((s) => {
+                  const st = dayRec[s._key] || '—';
+                  const cls = st === 'P' ? 'text-emerald-600' : st === 'A' ? 'text-rose-600' : st === 'L' ? 'text-amber-600' : 'text-slate-400';
+                  return `<tr><td class="py-2.5 px-4 font-mono text-xs">${esc(s.admNo || '—')}</td><td class="py-2.5 px-4 font-semibold">${esc(s.name)}</td><td class="py-2.5 px-4 text-xs">${esc(s.className)}</td><td class="py-2.5 px-4 text-right font-extrabold ${cls}">${esc(st)}</td></tr>`;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+      document.getElementById('fpAttDateSel')?.addEventListener('change', (e) => { state.attHistoryDate = e.target.value; renderInspectorAttendance(body, code, sc, students); });
+      document.getElementById('fpAttClsSel')?.addEventListener('change', (e) => { state.attHistoryClass = e.target.value; renderInspectorAttendance(body, code, sc, students); });
+    }
+
+    function renderInspectorPayments(body, code, sc, students) {
+      const stuMap = Object.fromEntries(students.map((s) => [s._key, s]));
+      const rows = [];
+      Object.entries(sc.payments || {}).forEach(([stuKey, pMap]) => {
+        Object.values(pMap || {}).forEach((p) => {
+          if (p && typeof p === 'object') rows.push({ ...p, studentName: stuMap[stuKey]?.name || stuKey, className: stuMap[stuKey]?.className || '—', admNo: stuMap[stuKey]?.admNo || '—' });
+        });
+      });
+      rows.sort((a, b) => String(b.paidDate || '').localeCompare(String(a.paidDate || '')));
+      body.innerHTML = `
+        <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+          <div class="px-5 py-3.5 border-b border-slate-200 dark:border-slate-800 text-sm font-bold">Immutable Payment Ledger (${rows.length} receipts)</div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-sm">
+              <thead><tr class="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 text-xs uppercase text-slate-500"><th class="py-2.5 px-4">Receipt</th><th class="py-2.5 px-4">Date</th><th class="py-2.5 px-4">Student</th><th class="py-2.5 px-4">Notes</th><th class="py-2.5 px-4 text-right">Amount</th></tr></thead>
+              <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                ${rows.length === 0 ? `<tr><td colspan="5" class="py-8 text-center text-slate-400">No ledger receipts recorded yet.</td></tr>` : rows.map((r) => `
+                  <tr>
+                    <td class="py-2.5 px-4 font-mono text-xs font-bold text-emerald-600">${esc(r.receiptNo)}</td>
+                    <td class="py-2.5 px-4 font-mono text-xs">${esc(r.paidDate || '—')}</td>
+                    <td class="py-2.5 px-4 font-semibold">${esc(r.studentName)} <span class="text-xs font-normal text-slate-400">(${esc(r.className)})</span></td>
+                    <td class="py-2.5 px-4 text-xs text-slate-500">${esc(r.notes || '—')}</td>
+                    <td class="py-2.5 px-4 text-right font-extrabold text-emerald-600">${formatINR((r.amountPaise || 0) / 100)}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderInspectorTimetable(body, code, timetable) {
+      body.innerHTML = `
+        <div class="space-y-4">
+          <form id="formAddTt" class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 grid grid-cols-1 sm:grid-cols-4 gap-3">
+            <input id="ttTeacher" type="text" required placeholder="Teacher full name" class="px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm" />
+            <select id="ttClass" class="px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm">${CLASSES.map((c) => `<option value="${c}">${c}</option>`).join('')}</select>
+            <input id="ttSubject" type="text" required placeholder="Subject / Period" class="px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm" />
+            <button type="submit" class="px-4 py-2 rounded-xl oxford-btn text-sm font-semibold">+ Assign Period</button>
+          </form>
+
+          <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 text-xs uppercase text-slate-500">
+                    <th class="py-3 px-4">Teacher</th>
+                    <th class="py-3 px-4">Class</th>
+                    <th class="py-3 px-4">Subject / Period</th>
+                    <th class="py-3 px-4 text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-sm">
+                  ${timetable.length === 0 ? `<tr><td colspan="4" class="py-8 text-center text-slate-400">No timetable periods assigned.</td></tr>` : timetable.map((t) => `
+                    <tr>
+                      <td class="py-3 px-4 font-semibold">${esc(t.teacher)}</td>
+                      <td class="py-3 px-4">${esc(t.className)}</td>
+                      <td class="py-3 px-4 text-xs font-semibold text-emerald-700 dark:text-emerald-300">${esc(t.subject)}</td>
+                      <td class="py-3 px-4 text-right"><button type="button" data-del-tt="${esc(t._key)}" class="text-xs font-semibold text-rose-600">Remove</button></td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('formAddTt')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const id = `tt_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+        const entry = {
+          id,
+          teacher: document.getElementById('ttTeacher').value.trim(),
+          className: document.getElementById('ttClass').value,
+          subject: document.getElementById('ttSubject').value.trim()
+        };
+        setSyncState('syncing');
+        try {
+          await set(ref(db, `schools_platform_v1/schools/${code}/timetable/${id}`), entry);
+          await writeAudit(code, 'ADD_TIMETABLE', id, entry);
+          e.target.reset();
+          showToast('Timetable entry saved.');
+        } catch (err) {
+          showSyncError(err.message);
+        }
+      });
+
+      body.querySelectorAll('[data-del-tt]').forEach((b) => b.addEventListener('click', async () => {
+        const key = b.dataset.delTt;
+        setSyncState('syncing');
+        try {
+          await remove(ref(db, `schools_platform_v1/schools/${code}/timetable/${key}`));
+          await writeAudit(code, 'DELETE_TIMETABLE', key);
+          showToast('Timetable entry removed.', 'info');
+        } catch (err) {
+          showSyncError(err.message);
+        }
+      }));
+    }
+
+    function renderInspectorDiaries(body, code, diaries) {
+      const sorted = [...diaries].sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+      body.innerHTML = `
+        <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 divide-y divide-slate-100 dark:divide-slate-800">
+          ${sorted.length === 0 ? `<p class="p-8 text-center text-sm text-slate-400">No daily diary entries logged yet for ${esc(code)}.</p>` : sorted.map((d) => `
+            <div class="p-4 flex items-start justify-between gap-3">
+              <div class="space-y-1">
+                <div class="flex items-center gap-2 text-xs">
+                  <span class="px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-bold">Class ${esc(d.className)}</span>
+                  <span class="font-bold">${esc(d.subject)}</span>
+                  <span class="text-slate-400 font-mono">${esc(d.date)}</span>
+                </div>
+                <p class="text-xs sm:text-sm"><strong>CW:</strong> ${esc(d.classwork)}</p>
+                <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-300"><strong>HW:</strong> ${esc(d.homework)}</p>
+              </div>
+              <button type="button" data-del-diary="${esc(d._key)}" class="text-xs font-semibold text-rose-600 shrink-0">Delete</button>
+            </div>
+          `).join('')}
+        </div>
+      `;
+
+      body.querySelectorAll('[data-del-diary]').forEach((b) => b.addEventListener('click', async () => {
+        const key = b.dataset.delDiary;
+        setSyncState('syncing');
+        try {
+          await remove(ref(db, `schools_platform_v1/schools/${code}/diaries/${key}`));
+          await writeAudit(code, 'DELETE_DIARY', key);
+          showToast('Diary entry deleted.', 'info');
+        } catch (err) {
+          showSyncError(err.message);
+        }
+      }));
+    }
+
+    function renderRoles(root) {
+      const codes = Object.keys(state.schools);
+      const rolesList = Object.entries(state.userRoles || {}).map(([uid, r]) => ({ uid, ...(r || {}) }));
+      const filtered = rolesList.filter((r) => state.roleFilterSchool === 'ALL' || r.schoolId === state.roleFilterSchool);
+
+      root.innerHTML = `
+        <div class="space-y-6">
+          <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 space-y-4">
+            <div>
+              <h3 class="text-base font-bold">Create School Login Passcode (Admin / Teacher / Student)</h3>
+              <p class="text-xs text-slate-500 mt-0.5">Creates a secure Firebase Auth login directly from here (no Firebase Console needed). Passcodes must be at least 6 digits. Copy or print newly issued passcodes during this session. Signing out or reloading clears them.</p>
+            </div>
+            <form id="formAssignRole" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+              <select id="roleSchool" required class="px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm font-semibold">
+                ${codes.map((c) => `<option value="${esc(c)}">${esc(c)}</option>`).join('')}
+              </select>
+              <select id="roleType" required class="px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm">
+                <option value="admin">Principal / Admin</option>
+                <option value="accountant">Accountant</option>
+                <option value="teacher">Teacher</option>
+                <option value="parent">Student / Parent</option>
+              </select>
+              <input id="roleIdentifier" type="text" placeholder="Teacher Name or Admission No" class="px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm" />
+              <input id="rolePasscode" type="password" inputmode="numeric" minlength="6" required placeholder="6+ digit passcode" class="px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm font-mono" />
+              <button id="btnCreateLogin" type="submit" class="px-4 py-2.5 rounded-xl oxford-btn text-sm font-semibold">Create Login</button>
+            </form>
+            <p id="roleHintLine" class="text-[11px] text-slate-500">For Principal/Admin, leave the 3rd box blank (signs in with School Code + Passcode). For Accountant or Teacher, enter their exact Name. For Student/Parent, enter exact Admission No.</p>
+          </div>
+
+          <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 space-y-3">
+            <div>
+              <h3 class="text-base font-bold">Bulk Class Parent Passcodes &amp; Printable Login Slips</h3>
+              <p class="text-xs text-slate-500 mt-0.5">Generate 6-digit passcodes for an entire class in one click (skips students who already have logins) and print or copy parent login slips.</p>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
+              <select id="bulkSchool" class="px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm font-semibold">
+                ${codes.map((c) => `<option value="${esc(c)}">${esc(c)}</option>`).join('')}
+              </select>
+              <select id="bulkClass" class="px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm font-semibold">
+                <option value="ALL">All Active Classes</option>
+                ${CLASSES.map((c) => `<option value="${c}">${c}</option>`).join('')}
+              </select>
+              <button id="btnBulkGen" type="button" class="px-4 py-2.5 rounded-xl oxford-btn text-sm font-semibold">Generate Missing</button>
+              <button id="btnPrintSlips" type="button" class="px-4 py-2.5 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-sm font-semibold">Print / Copy Slips</button>
+            </div>
+            <p id="bulkStatusLine" class="text-xs font-semibold text-emerald-700 dark:text-emerald-300 hidden"></p>
+            <div id="bulkSlipsPreview" class="hidden border-t border-slate-200 dark:border-slate-800 pt-3 space-y-2"></div>
+          </div>
+
+          <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+            <div class="px-5 py-3.5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3">
+              <span class="text-sm font-bold">Active School Logins (${filtered.length})</span>
+              <select id="roleSchoolFilter" class="px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs">
+                <option value="ALL">All Schools</option>
+                ${codes.map((c) => `<option value="${esc(c)}" ${state.roleFilterSchool === c ? 'selected' : ''}>${esc(c)}</option>`).join('')}
+              </select>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 text-xs uppercase text-slate-500">
+                    <th class="py-3 px-4">School</th>
+                    <th class="py-3 px-4">Role</th>
+                    <th class="py-3 px-4">Name / Admission No</th>
+                    <th class="py-3 px-4">Issued this session</th>
+                    <th class="py-3 px-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-sm">
+                  ${filtered.length === 0 ? `<tr><td colspan="5" class="py-8 text-center text-slate-400">No school logins created yet.</td></tr>` : filtered.map((r) => {
+                    const vaultRec = state.issuedPasscodes?.[r.uid];
+                    const pin = vaultRec?.passcode || '';
+                    const shown = state.revealedUids.has(r.uid);
+                    return `
+                    <tr>
+                      <td class="py-3 px-4 font-mono text-xs font-bold text-emerald-600">${esc(r.schoolId || '—')}</td>
+                      <td class="py-3 px-4 uppercase text-xs font-bold">${esc(r.role || '—')}</td>
+                      <td class="py-3 px-4 text-xs font-semibold">${esc(r.admNo || r.displayName || 'School Admin')}</td>
+                      <td class="py-3 px-4 font-mono text-xs">
+                        ${pin ? `
+                          <span class="font-extrabold text-emerald-700 dark:text-emerald-300">${shown ? esc(pin) : '••••••'}</span>
+                          <button type="button" data-toggle-pin="${esc(r.uid)}" class="ml-2 text-[11px] font-semibold text-blue-600 hover:underline">${shown ? 'Hide' : 'Show'}</button>
+                        ` : '<span class="text-slate-400">Not saved</span>'}
+                      </td>
+                      <td class="py-3 px-4 text-right whitespace-nowrap space-x-2">
+                        ${pin ? `<button type="button" data-copy-login="${esc(r.uid)}" class="text-xs font-semibold text-emerald-600 hover:underline">Copy</button>` : ''}
+                        <button type="button" data-revoke-uid="${esc(r.uid)}" class="text-xs font-semibold text-rose-600 hover:underline">Revoke</button>
+                      </td>
+                    </tr>`;
+                  }).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('roleSchoolFilter')?.addEventListener('change', (e) => {
+        state.roleFilterSchool = e.target.value;
+        renderRoles(root);
+      });
+
+      document.getElementById('btnBulkGen')?.addEventListener('click', async () => {
+        const schoolId = document.getElementById('bulkSchool')?.value;
+        const cls = document.getElementById('bulkClass')?.value || 'ALL';
+        const statusEl = document.getElementById('bulkStatusLine');
+        const btn = document.getElementById('btnBulkGen');
+        if (!schoolId) { showToast('Select a school first.', 'error'); return; }
+        const sc = state.schools[schoolId];
+        const students = toArray(sc?.students).filter((s) => s.status !== 'Left' && s.admNo && (cls === 'ALL' || s.className === cls));
+        if (!students.length) { showToast('No active students with Admission No found in this selection.', 'error'); return; }
+
+        const existingByStu = new Set();
+        Object.values(state.userRoles || {}).forEach((r) => {
+          if (r && r.schoolId === schoolId && r.role === 'parent') {
+            if (r.studentId) existingByStu.add(r.studentId);
+            if (r.admNo) existingByStu.add(String(r.admNo).trim().toLowerCase());
+          }
+        });
+        const targets = students.filter((s) => !existingByStu.has(s._key) && !existingByStu.has(String(s.admNo).trim().toLowerCase()));
+        if (!targets.length) { showToast('All students in this selection already have parent logins!', 'info'); return; }
+
+        state.isBulkGenerating = true;
+        btn.disabled = true;
+        btn.textContent = 'Generating...';
+        statusEl.classList.remove('hidden');
+        let created = 0, skipped = 0;
+        const issuingUid = state.user.uid;
+        try {
+          for (let i = 0; i < targets.length && state.user?.uid === issuingUid; i++) {
+            const s = targets[i];
+            statusEl.textContent = `Creating login ${i + 1} of ${targets.length} (${s.name})...`;
+            const passcode = String(100000 + crypto.getRandomValues(new Uint32Array(1))[0] % 900000);
+            const authEmail = buildAuthEmail('parent', schoolId, String(s.admNo).trim());
+            try {
+              const res = await fetch(
+                `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${encodeURIComponent(firebaseConfig.apiKey)}`,
+                { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: authEmail, password: passcode, returnSecureToken: false }) }
+              );
+              const data = await res.json();
+              if (!res.ok || !data.localId) { skipped++; continue; }
+              const newUid = data.localId;
+              await set(ref(db, `user_roles/${newUid}`), { role: 'parent', schoolId, studentId: s._key, admNo: String(s.admNo).trim(), assignedAt: serverTimestamp() });
+              if (state.user?.uid === issuingUid) state.issuedPasscodes[newUid] = { passcode };
+              created++;
+            } catch (_) { skipped++; }
+          }
+          await writeAudit(schoolId, 'BULK_CREATE_PARENTS', cls, { created, skipped });
+          showToast(`Created ${created} parent logins!`);
+        } finally {
+          state.isBulkGenerating = false;
+          renderActiveView();
+          const refreshedStatus = document.getElementById('bulkStatusLine');
+          if (refreshedStatus) {
+            refreshedStatus.classList.remove('hidden');
+            refreshedStatus.textContent = `Done! Created ${created} parent logins${skipped ? ` (${skipped} already existed in Auth)` : ''}. Tap "Print / Copy Slips" below.`;
+          }
+        }
+      });
+
+      document.getElementById('btnPrintSlips')?.addEventListener('click', () => {
+        const schoolId = document.getElementById('bulkSchool')?.value;
+        const cls = document.getElementById('bulkClass')?.value || 'ALL';
+        const preview = document.getElementById('bulkSlipsPreview');
+        if (!schoolId || !preview) return;
+        const sc = state.schools[schoolId];
+        const stuByKey = sc?.students || {};
+        const slips = Object.entries(state.userRoles || {})
+          .map(([uid, r]) => ({ uid, ...(r || {}), pin: state.issuedPasscodes?.[uid]?.passcode || '' }))
+          .filter((r) => r.schoolId === schoolId && r.role === 'parent' && r.pin)
+          .map((r) => ({ ...r, stu: stuByKey[r.studentId] || null }))
+          .filter((r) => cls === 'ALL' || r.stu?.className === cls)
+          .sort((a, b) => String(a.stu?.className || '').localeCompare(String(b.stu?.className || '')) || String(a.stu?.name || '').localeCompare(String(b.stu?.name || '')));
+
+        if (!slips.length) { showToast('No parent passcodes were issued for this selection in this session.', 'error'); return; }
+
+        const plainSlips = slips.map((r) =>
+          `${sc?.name || schoolId} — EduPulse Parent Login\nStudent: ${r.stu?.name || r.admNo} (Class ${r.stu?.className || '—'})\nSchool Code: ${schoolId}\nAdmission No: ${r.admNo}\nPasscode: ${r.pin}`
+        ).join('\n\n---\n\n');
+
+        const printableHtml = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Parent Login Slips - ${esc(schoolId)}</title><style>body{font-family:system-ui,sans-serif;padding:18px;color:#0f172a} .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px} .slip{border:2px solid #0B1F3A;outline:1.5px solid #D4AF37;outline-offset:-5px;border-radius:10px;padding:14px;page-break-inside:avoid} h4{margin:0 0 6px;font-size:13px;color:#0B1F3A;border-bottom:1px solid #D4AF37;padding-bottom:4px} p{margin:3px 0;font-size:12px} .mono{font-family:monospace}</style></head><body><h2 style="color:#0B1F3A">${esc(sc?.name || schoolId)} — All ${slips.length} Parent Login Slips (${esc(cls)})</h2><div class="grid">${slips.map((r) => `<div class="slip"><h4>${esc(sc?.name || schoolId)} — EduPulse Login</h4><p><strong>${esc(r.stu?.name || 'Student')}</strong> (Class ${esc(r.stu?.className || '—')})</p><p class="mono">School Code: <strong>${esc(schoolId)}</strong></p><p class="mono">Admission No: <strong>${esc(r.admNo)}</strong></p><p class="mono">Passcode: <strong>${esc(r.pin)}</strong></p></div>`).join('')}</div><script>window.onload=function(){window.print();};<\/script></body></html>`;
+
+        preview.classList.remove('hidden');
+        preview.innerHTML = `
+          <div class="flex flex-wrap items-center justify-between gap-2 pb-2">
+            <span class="text-xs font-extrabold text-[#0B1F3A] dark:text-[#F5D77F]">Showing ${slips.length} newly issued Parent Login Slips (${esc(schoolId)} • ${esc(cls)})</span>
+            <div class="flex flex-wrap gap-2">
+              <button id="btnCopyAllSlips" type="button" class="px-3 py-1.5 rounded-lg oxford-btn text-xs font-bold">Copy All (${slips.length})</button>
+              <button id="btnDownloadSlipsHtml" type="button" class="px-3 py-1.5 rounded-lg oxford-btn text-xs font-bold">Download Printable HTML</button>
+              <button id="btnPrintAllSlips" type="button" class="px-3 py-1.5 rounded-lg bg-[#D4AF37] text-[#0B1F3A] text-xs font-bold">Print Sheet</button>
+            </div>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 pt-1">
+            ${slips.map((r) => `
+              <div class="p-3 rounded-xl oxford-card bg-slate-50 dark:bg-slate-800/60 text-xs space-y-1">
+                <p class="font-extrabold text-[#0B1F3A] dark:text-[#F5D77F] truncate">${esc(sc?.name || schoolId)}</p>
+                <p class="font-bold">${esc(r.stu?.name || 'Student')} <span class="text-slate-500 font-normal">(Class ${esc(r.stu?.className || '—')})</span></p>
+                <p class="font-mono text-[11px]">School Code: <strong>${esc(schoolId)}</strong></p>
+                <p class="font-mono text-[11px]">Admission No: <strong>${esc(r.admNo)}</strong></p>
+                <p class="font-mono text-[11px]">Passcode: <strong class="text-[#0B1F3A] dark:text-[#F5D77F]">${esc(r.pin)}</strong></p>
+              </div>
+            `).join('')}
+          </div>
+        `;
+        document.getElementById('btnCopyAllSlips')?.addEventListener('click', () => {
+          navigator.clipboard?.writeText(plainSlips).then(() => showToast(`Copied all ${slips.length} parent login slips!`)).catch(() => showToast('Copy failed', 'error'));
+        });
+        document.getElementById('btnDownloadSlipsHtml')?.addEventListener('click', () => {
+          const blob = new Blob([printableHtml], { type: 'text/html;charset=utf-8' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a'); a.href = url; a.download = `Parent_Slips_${schoolId}_${cls}.html`; a.click();
+          setTimeout(() => URL.revokeObjectURL(url), 1000);
+          showToast(`Downloaded printable HTML with all ${slips.length} slips!`);
+        });
+        document.getElementById('btnPrintAllSlips')?.addEventListener('click', () => {
+          const w = window.open('', '_blank', 'width=850,height=900');
+          if (w) { w.document.open(); w.document.write(printableHtml); w.document.close(); return; }
+          const blob = new Blob([printableHtml], { type: 'text/html;charset=utf-8' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a'); a.href = url; a.download = `Parent_Slips_${schoolId}_${cls}.html`; a.click();
+          setTimeout(() => URL.revokeObjectURL(url), 1000);
+          showToast('Opened fallback download — open the HTML file in Chrome to print!');
+        });
+      });
+
+      document.getElementById('formAssignRole')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const schoolId = document.getElementById('roleSchool').value;
+        const role = document.getElementById('roleType').value;
+        const identifier = document.getElementById('roleIdentifier').value.trim();
+        const issuingUid = state.user.uid;
+        const passcode = document.getElementById('rolePasscode').value.trim();
+        const btn = document.getElementById('btnCreateLogin');
+
+        if (!schoolId || passcode.length < 6) {
+          showToast('Passcode must be at least 6 characters.', 'error');
+          return;
+        }
+        if ((role === 'teacher' || role === 'accountant' || role === 'parent') && !identifier) {
+          showToast(role === 'parent' ? 'Enter exact Admission No.' : 'Enter Staff / Accountant Name.', 'error');
+          return;
+        }
+
+        let linkedStudentId = '';
+        if (role === 'parent') {
+          const sc = state.schools[schoolId];
+          const match = toArray(sc?.students).find((s) => String(s.admNo || '').trim().toLowerCase() === identifier.toLowerCase());
+          if (!match) {
+            showToast(`No student with Admission No "${identifier}" found in ${schoolId}. Add the student first.`, 'error');
+            return;
+          }
+          linkedStudentId = match._key;
+        }
+
+        const authEmail = buildAuthEmail(role, schoolId, identifier);
+        btn.disabled = true;
+        btn.textContent = 'Creating...';
+        setSyncState('syncing');
+
+        try {
+          const signUpRes = await fetch(
+            `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${encodeURIComponent(firebaseConfig.apiKey)}`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email: authEmail, password: passcode, returnSecureToken: false })
+            }
+          );
+          const signUpData = await signUpRes.json();
+          if (!signUpRes.ok || !signUpData.localId) {
+            const codeMsg = signUpData?.error?.message || `HTTP ${signUpRes.status}`;
+            const err = new Error(codeMsg);
+            if (codeMsg === 'EMAIL_EXISTS') err.code = 'auth/email-already-in-use';
+            throw err;
+          }
+          const newUid = signUpData.localId;
+
+          const payload = { role, schoolId, assignedAt: serverTimestamp() };
+          if (role === 'parent') {
+            payload.studentId = linkedStudentId;
+            payload.admNo = identifier;
+          } else if (role === 'teacher' || role === 'accountant') {
+            payload.displayName = identifier;
+          } else {
+            payload.displayName = 'Principal / Admin';
+          }
+
+          await set(ref(db, `user_roles/${newUid}`), payload);
+          if (state.user?.uid === issuingUid) state.issuedPasscodes[newUid] = { passcode };
+          await writeAudit(schoolId, 'CREATE_LOGIN', newUid, { role, identifier: identifier || 'admin' });
+          e.target.reset();
+          showToast(`Login created! Ready to sign in on the School App.`);
+        } catch (err) {
+          if (err.code === 'auth/email-already-in-use') {
+            showToast('A login for this Admin/Teacher/Admission No already exists. Use Firebase Authentication to manage the existing account.', 'error');
+          } else {
+            showSyncError(err.message);
+          }
+        } finally {
+          btn.disabled = false;
+          btn.textContent = 'Create Login';
+          if (state.connected) setSyncState('connected');
+        }
+      });
+
+      root.querySelectorAll('[data-toggle-pin]').forEach((b) => b.addEventListener('click', () => {
+        const uid = b.dataset.togglePin;
+        if (state.revealedUids.has(uid)) state.revealedUids.delete(uid);
+        else state.revealedUids.add(uid);
+        renderRoles(root);
+      }));
+
+      root.querySelectorAll('[data-copy-login]').forEach((b) => b.addEventListener('click', () => {
+        const uid = b.dataset.copyLogin;
+        const r = state.userRoles?.[uid] || {};
+        const v = state.issuedPasscodes?.[uid] || {};
+        const roleLabel = r.role === 'admin' ? 'Admin' : r.role === 'teacher' ? 'Teacher' : 'Student';
+        const lines = [`*EduPulse Login (${roleLabel})*`, `School Code: ${r.schoolId || ''}`];
+        if (r.role === 'teacher') lines.push(`Teacher Name: ${r.displayName || ''}`);
+        if (r.role === 'parent') lines.push(`Admission No: ${r.admNo || ''}`);
+        lines.push(`Passcode: ${v.passcode || ''}`);
+        const text = lines.join('\n');
+        if (navigator.clipboard?.writeText) navigator.clipboard.writeText(text).then(() => showToast('Login details copied!'));
+        else {
+          const ta = document.createElement('textarea'); ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+          document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); showToast('Login details copied!'); } catch {} ta.remove();
+        }
+      }));
+
+      root.querySelectorAll('[data-revoke-uid]').forEach((b) => b.addEventListener('click', () => {
+        const uid = b.dataset.revokeUid;
+        confirmAction('Revoke Access', `Remove school access for UID ${uid}?`, async () => {
+          setSyncState('syncing');
+          try {
+            await remove(ref(db, `user_roles/${uid}`));
+            delete state.issuedPasscodes[uid];
+            showToast('Access revoked.', 'info');
+          } catch (err) {
+            showSyncError(err.message);
+          }
+        });
+      }));
+    }
+
+    function renderBackups(root) {
+      root.innerHTML = `
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 space-y-4">
+            <h3 class="text-base font-bold">Encrypted-Ready JSON Backup</h3>
+            <p class="text-xs text-slate-500">Download a complete snapshot of all schools and user role mappings to keep offline.</p>
+            <button id="btnDownloadBackup" type="button" class="px-4 py-2.5 rounded-xl oxford-btn text-sm font-semibold inline-flex items-center gap-2">
+              <i data-lucide="download" class="w-4 h-4"></i>
+              <span>Download Full Snapshot (${todayIST()})</span>
+            </button>
+          </div>
+
+          <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 space-y-4 lg:col-span-2">
+            <div>
+              <h3 class="text-base font-bold">Automatic Google Sheets Live Sync (Zero-Click)</h3>
+              <p class="text-xs text-slate-500 mt-0.5">Once linked for a school, every student, fee payment, attendance, and timetable update automatically updates your private interactive Google Sheet in Drive in the background.</p>
+            </div>
+            <form id="formSheetAutoSync" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              <select id="sheetCfgSchool" class="px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm font-semibold">
+                ${Object.keys(state.schools).map((c) => `<option value="${esc(c)}" ${c === state.selectedSchoolCode ? 'selected' : ''}>${esc(c)}</option>`).join('')}
+              </select>
+              <input id="sheetWebhookUrl" type="url" required placeholder="Apps Script Web App URL" value="${esc(state.schools[state.selectedSchoolCode]?.sheetsSyncConfig?.webhookUrl || '')}" class="px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs" />
+              <input id="sheetSecretKey" type="password" required placeholder="Private Sync Secret Key" value="${esc(state.schools[state.selectedSchoolCode]?.sheetsSyncConfig?.secret || '')}" class="px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-mono" />
+              <button type="submit" class="px-4 py-2.5 rounded-xl oxford-btn text-xs font-bold">Enable Auto-Sync</button>
+            </form>
+          </div>
+
+          <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 space-y-4">
+            <h3 class="text-base font-bold">Minimum Android APK Version Gate</h3>
+            <p class="text-xs text-slate-500">Blocks outdated APK versions from writing incompatible schemas to Firebase.</p>
+            <form id="formAppVersion" class="flex items-center gap-3">
+              <input id="minAppVerInput" type="text" required value="${esc(state.appConfig.minAppVersion || '3.2.0')}" placeholder="e.g. 3.2.0" class="flex-1 px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm font-mono" />
+              <button type="submit" class="px-4 py-2.5 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-sm font-semibold">Save</button>
+            </form>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('btnDownloadBackup')?.addEventListener('click', () => {
+        const snapshot = {
+          exportedAtIST: `${todayIST()} ${timeIST()}`,
+          schools: state.schools,
+          user_roles: state.userRoles,
+          appConfig: state.appConfig
+        };
+        const blob = new Blob([JSON.stringify(snapshot, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `edupulse_founder_backup_${todayIST()}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        showToast('Backup downloaded.');
+      });
+
+      document.getElementById('sheetCfgSchool')?.addEventListener('change', (e) => {
+        state.selectedSchoolCode = e.target.value;
+        renderBackups(root);
+      });
+      document.getElementById('formSheetAutoSync')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const code = document.getElementById('sheetCfgSchool').value;
+        const webhookUrl = document.getElementById('sheetWebhookUrl').value.trim();
+        const secret = document.getElementById('sheetSecretKey').value.trim();
+        if (!code || !webhookUrl || !secret) return;
+        setSyncState('syncing');
+        try {
+          const cfg = { enabled: true, webhookUrl, secret, updatedAt: serverTimestamp() };
+          await set(ref(db, `schools_platform_v1/schools/${code}/sheetsSyncConfig`), cfg);
+          await pushSchoolToGoogleSheet(code, state.schools[code], cfg);
+          showToast(`Automatic Google Sheets sync enabled for ${code}!`);
+        } catch (err) { showSyncError(err.message); }
+      });
+      document.getElementById('formAppVersion')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const ver = document.getElementById('minAppVerInput').value.trim();
+        if (!ver) return;
+        setSyncState('syncing');
+        try {
+          await set(ref(db, 'schools_platform_v1/appConfig/minAppVersion'), ver);
+          showToast(`Minimum APK version set to ${ver}`);
+        } catch (err) {
+          showSyncError(err.message);
+        }
+      });
+    }
+
+    // ===================== FORM & GLOBAL EVENTS =====================
+    function populateClassSelect() {
+      const sel = document.getElementById('stuClass');
+      if (sel) sel.innerHTML = CLASSES.map((c) => `<option value="${c}">${c}</option>`).join('');
+    }
+
+    function bindEvents() {
+      document.getElementById('btnLoginTheme').addEventListener('click', toggleTheme);
+      document.getElementById('btnHeaderTheme').addEventListener('click', toggleTheme);
+      document.getElementById('btnDismissSyncError').addEventListener('click', () => document.getElementById('syncErrorBanner').classList.add('hidden'));
+
+      document.getElementById('btnOpenSidebar').addEventListener('click', () => {
+        document.getElementById('sidebar').classList.remove('-translate-x-full');
+        document.getElementById('sidebarBackdrop').classList.remove('hidden');
+      });
+      const closeSidebar = () => {
+        document.getElementById('sidebar').classList.add('-translate-x-full');
+        document.getElementById('sidebarBackdrop').classList.add('hidden');
+      };
+      document.getElementById('btnCloseSidebar').addEventListener('click', closeSidebar);
+      document.getElementById('sidebarBackdrop').addEventListener('click', closeSidebar);
+
+      document.querySelectorAll('.nav-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          state.activeTab = btn.dataset.tab;
+          closeSidebar();
+          renderActiveView();
+        });
+      });
+
+      document.querySelectorAll('[data-close]').forEach((btn) => {
+        btn.addEventListener('click', () => closeModal(btn.dataset.close));
+      });
+      document.getElementById('btnConfirmCancel').addEventListener('click', () => closeModal('modalConfirm'));
+      document.getElementById('btnConfirmOk').addEventListener('click', async () => {
+        closeModal('modalConfirm');
+        if (typeof state.confirmCb === 'function') await state.confirmCb();
+      });
+
+      document.getElementById('btnLogout').addEventListener('click', async () => {
+        clearListeners();
+        await signOut(auth);
+        showToast('Signed out.', 'info');
+      });
+
+      // Founder Login
+      document.getElementById('formFounderLogin').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('founderEmail').value.trim();
+        const password = document.getElementById('founderPassword').value;
+        const errBox = document.getElementById('loginErrorBox');
+        const btn = document.getElementById('btnLoginSubmit');
+        errBox.classList.add('hidden');
+        btn.disabled = true;
+        btn.textContent = 'Signing in...';
+        try {
+          await sessionReady;
+          await signInWithEmailAndPassword(auth, email, password);
+        } catch (err) {
+          errBox.textContent = err.message || 'Sign-in failed.';
+          errBox.classList.remove('hidden');
+        } finally {
+          btn.disabled = false;
+          btn.innerHTML = `<i data-lucide="shield-check" class="w-4 h-4"></i><span>Sign In Securely</span>`;
+          refreshIcons();
+        }
+      });
+
+      // Save Student (Leaf Write + Unique Adm No Check)
+      document.getElementById('formStudent').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const code = state.selectedSchoolCode;
+        const sc = state.schools[code];
+        if (!sc) return;
+        const editKey = document.getElementById('stuEditId').value;
+        const admNo = document.getElementById('stuAdmNo').value.trim();
+        const duplicate = toArray(sc.students).some((s) => s._key !== editKey && String(s.admNo || '').trim().toLowerCase() === admNo.toLowerCase());
+        if (!admNo || duplicate) {
+          showToast('Admission number must be non-empty and unique in this school.', 'error');
+          return;
+        }
+        const key = editKey || `stu_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+        const existing = (editKey && sc.students?.[editKey]) || {};
+        const payload = {
+          ...existing,
+          id: key,
+          admNo,
+          name: document.getElementById('stuName').value.trim(),
+          className: document.getElementById('stuClass').value,
+          guardian: document.getElementById('stuGuardian').value.trim(),
+          phone: document.getElementById('stuPhone').value.trim(),
+          monthlyFee: Math.max(0, Number(document.getElementById('stuMonthlyFee').value) || 0),
+          feeBalance: Math.max(0, Number(document.getElementById('stuBalance').value) || 0),
+          feeStatus: existing.feeStatus || 'Pending'
+        };
+        setSyncState('syncing');
+        try {
+          await set(ref(db, `schools_platform_v1/schools/${code}/students/${key}`), payload);
+          await writeAudit(code, editKey ? 'UPDATE_STUDENT' : 'ADD_STUDENT', key, { admNo, name: payload.name });
+          closeModal('modalStudent');
+          showToast(editKey ? 'Student updated live.' : 'Student added live.');
+        } catch (err) {
+          showSyncError(err.message);
+        }
+      });
+
+      // Record Append-Only Fee Payment (Atomic Receipt Counter + Paise)
+      document.getElementById('formPayment').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const code = state.selectedSchoolCode;
+        const stuKey = document.getElementById('payStudentId').value;
+        const sc = state.schools[code];
+        const stu = sc?.students?.[stuKey];
+        if (!stu) return;
+
+        const rupees = Math.round(Number(document.getElementById('payAmount').value) || 0);
+        if (rupees <= 0) { showToast('Enter a valid amount.', 'error'); return; }
+        const notes = document.getElementById('payNotes').value.trim();
+
+        const submit = e.currentTarget.querySelector('[type=submit]');
+        if (submit.disabled) return;
+        submit.disabled = true;
+        setSyncState('syncing');
+        try {
+          const request = feeRequest(e.target, db, { type: 'PAYMENT', amountPaise: rupees * 100, notes });
+          const receiptNo = await postSchoolFee(db, code, stuKey, request, state.user.uid, todayIST());
+          await writeAudit(code, 'RECORD_PAYMENT', stuKey, { receiptNo, rupees });
+          closeModal('modalPayment');
+          showToast(`Payment recorded • Receipt ${receiptNo}`);
+        } catch (err) {
+          showSyncError(`Payment failed: ${err.message}`);
+        } finally { submit.disabled = false; }
+      });
+    }
+
+    // Auth State Gate
+    onAuthStateChanged(auth, async (user) => {
+      if (user?.uid !== state.user?.uid || !user) {
+        state.issuedPasscodes = {};
+        state.revealedUids.clear();
+        document.getElementById('mainContent').replaceChildren();
+      }
+      if (!user) {
+        state.user = null;
+        clearListeners();
+        document.getElementById('appShell').classList.add('hidden');
+        document.getElementById('loginScreen').classList.remove('hidden');
+        refreshIcons();
+        return;
+      }
+
+      try {
+        const founderSnap = await get(ref(db, `founders/${user.uid}`));
+        if (founderSnap.val() !== true) {
+          await signOut(auth);
+          const errBox = document.getElementById('loginErrorBox');
+          errBox.textContent = 'Access denied: this account is not registered under /founders/{uid}.';
+          errBox.classList.remove('hidden');
+          return;
+        }
+        state.user = user;
+        document.getElementById('sidebarFounderEmail').textContent = user.email || user.uid;
+        document.getElementById('loginScreen').classList.add('hidden');
+        document.getElementById('appShell').classList.remove('hidden');
+        startRealtimeListeners();
+        renderActiveView();
+      } catch (err) {
+        const errBox = document.getElementById('loginErrorBox');
+        errBox.textContent = `Verification failed: ${err.message}`;
+        errBox.classList.remove('hidden');
+      }
+    });
+
+    initTheme();
+    populateClassSelect();
+    bindEvents();
+    refreshIcons();
+  </script>
+</body>
+</html>
