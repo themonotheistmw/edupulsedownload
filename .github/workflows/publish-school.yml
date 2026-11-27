@@ -1,0 +1,19 @@
+name: Publish signed School APK
+on:
+  push:
+    branches: [main]
+    paths: ['downloads/app-release.apk']
+permissions:
+  contents: write
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify signed release and publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -eu
+          echo '03ec2e39ef09402916e70344d8d9d3bbb63879909f2263a70db17994034a6e2e  downloads/app-release.apk' | sha256sum -c -
+          gh release create v3.2.2 downloads/app-release.apk --target "$GITHUB_SHA" --title 'EduPulse School 3.2.2' --notes 'Signed Android app for school staff and families.'
